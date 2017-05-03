@@ -646,7 +646,7 @@ var ImageGallery = function (_React$Component) {
     value: function _getThumbnailBarHeight() {
       if (this._isThumbnailHorizontal()) {
         return {
-          height: this.props.showThumbnailsNav ? this.state.gallerySlideWrapperHeight - 50 : this.state.gallerySlideWrapperHeight
+          height: this.props.showThumbnailsNav && this._showThumbnailsNav() ? this.state.gallerySlideWrapperHeight - 50 : this.state.gallerySlideWrapperHeight
         };
       }
       return {};
@@ -780,6 +780,25 @@ var ImageGallery = function (_React$Component) {
       );
     }
   }, {
+    key: '_showThumbnailsNav',
+    value: function _showThumbnailsNav() {
+      var _state4 = this.state,
+          thumbnailsWrapperWidth = _state4.thumbnailsWrapperWidth,
+          thumbnailsWrapperHeight = _state4.thumbnailsWrapperHeight;
+
+
+      if (this._thumbnails) {
+
+        if (this._isThumbnailHorizontal()) {
+          return this._thumbnails.scrollHeight > thumbnailsWrapperHeight;
+        }
+
+        return this._thumbnails.scrollWidth > thumbnailsWrapperWidth;
+      }
+
+      return false;
+    }
+  }, {
     key: 'slideThumbnailsToIndex',
     value: function slideThumbnailsToIndex(index) {
       var slideCount = this.props.items.length - 1;
@@ -818,16 +837,16 @@ var ImageGallery = function (_React$Component) {
     value: function render() {
       var _this7 = this;
 
-      var _state4 = this.state,
-          currentIndex = _state4.currentIndex,
-          isFullscreen = _state4.isFullscreen,
-          modalFullscreen = _state4.modalFullscreen,
-          isPlaying = _state4.isPlaying;
+      var _state5 = this.state,
+          currentIndex = _state5.currentIndex,
+          isFullscreen = _state5.isFullscreen,
+          modalFullscreen = _state5.modalFullscreen,
+          isPlaying = _state5.isPlaying;
 
 
       var thumbnailStyle = this._getThumbnailStyle();
       var thumbnailPosition = this.props.thumbnailPosition;
-      var thumbnailNavClass = this.props.showThumbnailsNav ? ' navigation' : '';
+      var thumbnailNavClass = this.props.showThumbnailsNav && this._showThumbnailsNav() ? ' navigation' : '';
 
       var slideLeft = this._slideLeft.bind(this);
       var slideRight = this._slideRight.bind(this);
@@ -998,7 +1017,7 @@ var ImageGallery = function (_React$Component) {
               className: 'image-gallery-thumbnails-wrapper' + thumbnailNavClass + ' ' + thumbnailPosition,
               style: this._getThumbnailBarHeight()
             },
-            this.props.showThumbnailsNav && _react2.default.createElement(
+            this.props.showThumbnailsNav && this._showThumbnailsNav() && _react2.default.createElement(
               'span',
               null,
               this.props.renderThumbnailsLeftNav(slideThumbnailsLeft, !this._canSlideThumbnailsLeft(), this._isThumbnailHorizontal()),
