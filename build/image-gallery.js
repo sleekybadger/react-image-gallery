@@ -24,6 +24,10 @@ var _lodash3 = require('lodash.debounce');
 
 var _lodash4 = _interopRequireDefault(_lodash3);
 
+var _propTypes = require('prop-types');
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -108,6 +112,8 @@ var ImageGallery = function (_React$Component) {
       // Used to update the throttle if slideDuration changes
       this._unthrottledSlideToIndex = this.slideToIndex.bind(this);
       this.slideToIndex = (0, _lodash2.default)(this._unthrottledSlideToIndex, this.props.slideDuration, { trailing: false });
+      this._unthrottledSlideThumbnailsToIndex = this.slideThumbnailsToIndex.bind(this);
+      this.slideThumbnailsToIndex = (0, _lodash2.default)(this._unthrottledSlideThumbnailsToIndex, this.props.slideDuration, { trailing: false });
 
       this._handleResize = this._handleResize.bind(this);
       this._debounceResize = (0, _lodash4.default)(this._handleResize, 500);
@@ -563,6 +569,24 @@ var ImageGallery = function (_React$Component) {
       }
     }
   }, {
+    key: '_handleOnSwipedThumbnailsTo',
+    value: function _handleOnSwipedThumbnailsTo(index) {
+      var slideTo = this.state.currentThumbnailIndex;
+      slideTo += index;
+
+      if (index < 0) {
+        if (!this._canSlideThumbnailsLeft()) {
+          slideTo = this.state.currentThumbnailIndex;
+        }
+      } else {
+        if (!this._canSlideThumbnailsRight()) {
+          slideTo = this.state.currentThumbnailIndex;
+        }
+      }
+
+      this._unthrottledSlideThumbnailsToIndex(slideTo);
+    }
+  }, {
     key: '_getAlignmentClassName',
     value: function _getAlignmentClassName(index) {
       // LEFT, and RIGHT alignments are necessary for lazyLoad
@@ -694,33 +718,33 @@ var ImageGallery = function (_React$Component) {
         translateX = this._getTranslateXForTwoSlide(index);
       }
 
-      var translate3d = 'translate3d(' + translateX + '%, 0, 0)';
+      var translate = 'translate(' + translateX + '%, 0)';
 
       return {
-        WebkitTransform: translate3d,
-        MozTransform: translate3d,
-        msTransform: translate3d,
-        OTransform: translate3d,
-        transform: translate3d,
+        WebkitTransform: translate,
+        MozTransform: translate,
+        msTransform: translate,
+        OTransform: translate,
+        transform: translate,
         zIndex: zIndex
       };
     }
   }, {
     key: '_getThumbnailStyle',
     value: function _getThumbnailStyle() {
-      var translate3d = void 0;
+      var translate = void 0;
 
       if (this._isThumbnailHorizontal()) {
-        translate3d = 'translate3d(0, ' + this.state.thumbsTranslate + 'px, 0)';
+        translate = 'translate(0, ' + this.state.thumbsTranslate + 'px)';
       } else {
-        translate3d = 'translate3d(' + this.state.thumbsTranslate + 'px, 0, 0)';
+        translate = 'translate(' + this.state.thumbsTranslate + 'px, 0)';
       }
       return {
-        WebkitTransform: translate3d,
-        MozTransform: translate3d,
-        msTransform: translate3d,
-        OTransform: translate3d,
-        transform: translate3d
+        WebkitTransform: translate,
+        MozTransform: translate,
+        msTransform: translate,
+        OTransform: translate,
+        transform: translate
       };
     }
   }, {
@@ -790,10 +814,10 @@ var ImageGallery = function (_React$Component) {
       if (this._thumbnails) {
 
         if (this._isThumbnailHorizontal()) {
-          return this._thumbnails.scrollHeight > thumbnailsWrapperHeight;
+          return thumbnailsWrapperHeight && this._thumbnails.scrollHeight > thumbnailsWrapperHeight;
         }
 
-        return this._thumbnails.scrollWidth > thumbnailsWrapperWidth;
+        return thumbnailsWrapperWidth && this._thumbnails.scrollWidth > thumbnailsWrapperWidth;
       }
 
       return false;
@@ -1023,7 +1047,40 @@ var ImageGallery = function (_React$Component) {
               this.props.renderThumbnailsLeftNav(slideThumbnailsLeft, !this._canSlideThumbnailsLeft(), this._isThumbnailHorizontal()),
               this.props.renderThumbnailsRightNav(slideThumbnailsRight, !this._canSlideThumbnailsRight(), this._isThumbnailHorizontal())
             ),
-            _react2.default.createElement(
+            !this.props.disableSwipe && this._showThumbnailsNav() ? _react2.default.createElement(
+              _reactSwipeable2.default,
+              {
+                className: 'image-gallery-thumbnails-swipe',
+                delta: 1,
+                onSwiped: this._handleOnSwipedThumbnailsTo.bind(this),
+                onSwipedLeft: this._handleOnSwipedThumbnailsTo.bind(this, 1),
+                onSwipedRight: this._handleOnSwipedThumbnailsTo.bind(this, -1),
+                onSwipedDown: this._handleOnSwipedThumbnailsTo.bind(this, -1),
+                onSwipedUp: this._handleOnSwipedThumbnailsTo.bind(this, 1)
+              },
+              _react2.default.createElement(
+                'div',
+                {
+                  className: 'image-gallery-thumbnails',
+                  ref: function ref(i) {
+                    return _this7._thumbnailsWrapper = i;
+                  }
+                },
+                _react2.default.createElement(
+                  'div',
+                  {
+                    ref: function ref(t) {
+                      return _this7._thumbnails = t;
+                    },
+                    className: 'image-gallery-thumbnails-container',
+                    style: thumbnailStyle,
+                    role: 'navigation',
+                    'aria-label': 'Thumbnail Navigation'
+                  },
+                  thumbnails
+                )
+              )
+            ) : _react2.default.createElement(
               'div',
               {
                 className: 'image-gallery-thumbnails',
@@ -1056,45 +1113,45 @@ var ImageGallery = function (_React$Component) {
 }(_react2.default.Component);
 
 ImageGallery.propTypes = {
-  items: _react2.default.PropTypes.array.isRequired,
-  showNav: _react2.default.PropTypes.bool,
-  autoPlay: _react2.default.PropTypes.bool,
-  lazyLoad: _react2.default.PropTypes.bool,
-  infinite: _react2.default.PropTypes.bool,
-  showIndex: _react2.default.PropTypes.bool,
-  showBullets: _react2.default.PropTypes.bool,
-  showThumbnails: _react2.default.PropTypes.bool,
-  showThumbnailsNav: _react2.default.PropTypes.bool,
-  showPlayButton: _react2.default.PropTypes.bool,
-  showFullscreenButton: _react2.default.PropTypes.bool,
-  slideOnThumbnailHover: _react2.default.PropTypes.bool,
-  disableThumbnailScroll: _react2.default.PropTypes.bool,
-  disableArrowKeys: _react2.default.PropTypes.bool,
-  disableSwipe: _react2.default.PropTypes.bool,
-  useBrowserFullscreen: _react2.default.PropTypes.bool,
-  defaultImage: _react2.default.PropTypes.string,
-  indexSeparator: _react2.default.PropTypes.string,
-  thumbnailPosition: _react2.default.PropTypes.string,
-  startIndex: _react2.default.PropTypes.number,
-  slideDuration: _react2.default.PropTypes.number,
-  slideInterval: _react2.default.PropTypes.number,
-  swipingTransitionDuration: _react2.default.PropTypes.number,
-  onSlide: _react2.default.PropTypes.func,
-  onScreenChange: _react2.default.PropTypes.func,
-  onPause: _react2.default.PropTypes.func,
-  onPlay: _react2.default.PropTypes.func,
-  onClick: _react2.default.PropTypes.func,
-  onImageLoad: _react2.default.PropTypes.func,
-  onImageError: _react2.default.PropTypes.func,
-  onThumbnailError: _react2.default.PropTypes.func,
-  renderCustomControls: _react2.default.PropTypes.func,
-  renderLeftNav: _react2.default.PropTypes.func,
-  renderRightNav: _react2.default.PropTypes.func,
-  renderPlayPauseButton: _react2.default.PropTypes.func,
-  renderFullscreenButton: _react2.default.PropTypes.func,
-  renderThumbnailLeftNav: _react2.default.PropTypes.func,
-  renderThumbnailRightNav: _react2.default.PropTypes.func,
-  renderItem: _react2.default.PropTypes.func
+  items: _propTypes2.default.array.isRequired,
+  showNav: _propTypes2.default.bool,
+  autoPlay: _propTypes2.default.bool,
+  lazyLoad: _propTypes2.default.bool,
+  infinite: _propTypes2.default.bool,
+  showIndex: _propTypes2.default.bool,
+  showBullets: _propTypes2.default.bool,
+  showThumbnails: _propTypes2.default.bool,
+  showThumbnailsNav: _propTypes2.default.bool,
+  showPlayButton: _propTypes2.default.bool,
+  showFullscreenButton: _propTypes2.default.bool,
+  slideOnThumbnailHover: _propTypes2.default.bool,
+  disableThumbnailScroll: _propTypes2.default.bool,
+  disableArrowKeys: _propTypes2.default.bool,
+  disableSwipe: _propTypes2.default.bool,
+  useBrowserFullscreen: _propTypes2.default.bool,
+  defaultImage: _propTypes2.default.string,
+  indexSeparator: _propTypes2.default.string,
+  thumbnailPosition: _propTypes2.default.string,
+  startIndex: _propTypes2.default.number,
+  slideDuration: _propTypes2.default.number,
+  slideInterval: _propTypes2.default.number,
+  swipingTransitionDuration: _propTypes2.default.number,
+  onSlide: _propTypes2.default.func,
+  onScreenChange: _propTypes2.default.func,
+  onPause: _propTypes2.default.func,
+  onPlay: _propTypes2.default.func,
+  onClick: _propTypes2.default.func,
+  onImageLoad: _propTypes2.default.func,
+  onImageError: _propTypes2.default.func,
+  onThumbnailError: _propTypes2.default.func,
+  renderCustomControls: _propTypes2.default.func,
+  renderLeftNav: _propTypes2.default.func,
+  renderRightNav: _propTypes2.default.func,
+  renderPlayPauseButton: _propTypes2.default.func,
+  renderFullscreenButton: _propTypes2.default.func,
+  renderThumbnailLeftNav: _propTypes2.default.func,
+  renderThumbnailRightNav: _propTypes2.default.func,
+  renderItem: _propTypes2.default.func
 };
 ImageGallery.defaultProps = {
   items: [],
