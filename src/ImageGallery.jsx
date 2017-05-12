@@ -2,6 +2,7 @@ import React from 'react';
 import Swipeable from 'react-swipeable';
 import throttle from 'lodash.throttle';
 import debounce from 'lodash.debounce';
+import PropTypes from 'prop-types';
 
 const screenChangeEvents = [
   'fullscreenchange',
@@ -32,45 +33,45 @@ export default class ImageGallery extends React.Component {
   }
 
   static propTypes = {
-    items: React.PropTypes.array.isRequired,
-    showNav: React.PropTypes.bool,
-    autoPlay: React.PropTypes.bool,
-    lazyLoad: React.PropTypes.bool,
-    infinite: React.PropTypes.bool,
-    showIndex: React.PropTypes.bool,
-    showBullets: React.PropTypes.bool,
-    showThumbnails: React.PropTypes.bool,
-    showThumbnailsNav: React.PropTypes.bool,
-    showPlayButton: React.PropTypes.bool,
-    showFullscreenButton: React.PropTypes.bool,
-    slideOnThumbnailHover: React.PropTypes.bool,
-    disableThumbnailScroll: React.PropTypes.bool,
-    disableArrowKeys: React.PropTypes.bool,
-    disableSwipe: React.PropTypes.bool,
-    useBrowserFullscreen: React.PropTypes.bool,
-    defaultImage: React.PropTypes.string,
-    indexSeparator: React.PropTypes.string,
-    thumbnailPosition: React.PropTypes.string,
-    startIndex: React.PropTypes.number,
-    slideDuration: React.PropTypes.number,
-    slideInterval: React.PropTypes.number,
-    swipingTransitionDuration: React.PropTypes.number,
-    onSlide: React.PropTypes.func,
-    onScreenChange: React.PropTypes.func,
-    onPause: React.PropTypes.func,
-    onPlay: React.PropTypes.func,
-    onClick: React.PropTypes.func,
-    onImageLoad: React.PropTypes.func,
-    onImageError: React.PropTypes.func,
-    onThumbnailError: React.PropTypes.func,
-    renderCustomControls: React.PropTypes.func,
-    renderLeftNav: React.PropTypes.func,
-    renderRightNav: React.PropTypes.func,
-    renderPlayPauseButton: React.PropTypes.func,
-    renderFullscreenButton: React.PropTypes.func,
-    renderThumbnailLeftNav: React.PropTypes.func,
-    renderThumbnailRightNav: React.PropTypes.func,
-    renderItem: React.PropTypes.func
+    items: PropTypes.array.isRequired,
+    showNav: PropTypes.bool,
+    autoPlay: PropTypes.bool,
+    lazyLoad: PropTypes.bool,
+    infinite: PropTypes.bool,
+    showIndex: PropTypes.bool,
+    showBullets: PropTypes.bool,
+    showThumbnails: PropTypes.bool,
+    showThumbnailsNav: PropTypes.bool,
+    showPlayButton: PropTypes.bool,
+    showFullscreenButton: PropTypes.bool,
+    slideOnThumbnailHover: PropTypes.bool,
+    disableThumbnailScroll: PropTypes.bool,
+    disableArrowKeys: PropTypes.bool,
+    disableSwipe: PropTypes.bool,
+    useBrowserFullscreen: PropTypes.bool,
+    defaultImage: PropTypes.string,
+    indexSeparator: PropTypes.string,
+    thumbnailPosition: PropTypes.string,
+    startIndex: PropTypes.number,
+    slideDuration: PropTypes.number,
+    slideInterval: PropTypes.number,
+    swipingTransitionDuration: PropTypes.number,
+    onSlide: PropTypes.func,
+    onScreenChange: PropTypes.func,
+    onPause: PropTypes.func,
+    onPlay: PropTypes.func,
+    onClick: PropTypes.func,
+    onImageLoad: PropTypes.func,
+    onImageError: PropTypes.func,
+    onThumbnailError: PropTypes.func,
+    renderCustomControls: PropTypes.func,
+    renderLeftNav: PropTypes.func,
+    renderRightNav: PropTypes.func,
+    renderPlayPauseButton: PropTypes.func,
+    renderFullscreenButton: PropTypes.func,
+    renderThumbnailLeftNav: PropTypes.func,
+    renderThumbnailRightNav: PropTypes.func,
+    renderItem: PropTypes.func
   };
 
   static defaultProps = {
@@ -216,8 +217,12 @@ export default class ImageGallery extends React.Component {
     // Used to update the throttle if slideDuration changes
     this._unthrottledSlideToIndex = this.slideToIndex.bind(this);
     this.slideToIndex = throttle(this._unthrottledSlideToIndex,
-                                 this.props.slideDuration,
+                                this.props.slideDuration,
                                 {trailing: false});
+    this._unthrottledSlideThumbnailsToIndex = this.slideThumbnailsToIndex.bind(this);
+    this.slideThumbnailsToIndex = throttle(this._unthrottledSlideThumbnailsToIndex,
+                                          this.props.slideDuration,
+                                          {trailing: false});
 
     this._handleResize = this._handleResize.bind(this);
     this._debounceResize = debounce(this._handleResize, 500);
@@ -636,6 +641,23 @@ export default class ImageGallery extends React.Component {
     }
   }
 
+  _handleOnSwipedThumbnailsTo(index) {
+    let slideTo = this.state.currentThumbnailIndex;
+    slideTo += index;
+
+    if (index < 0) {
+      if (!this._canSlideThumbnailsLeft()) {
+        slideTo = this.state.currentThumbnailIndex;
+      }
+    } else {
+      if (!this._canSlideThumbnailsRight()) {
+        slideTo = this.state.currentThumbnailIndex;
+      }
+    }
+
+    this._unthrottledSlideThumbnailsToIndex(slideTo);
+  }
+
   _getAlignmentClassName(index) {
     // LEFT, and RIGHT alignments are necessary for lazyLoad
     let {currentIndex} = this.state;
@@ -759,32 +781,32 @@ export default class ImageGallery extends React.Component {
       translateX = this._getTranslateXForTwoSlide(index);
     }
 
-    const translate3d = `translate3d(${translateX}%, 0, 0)`;
+    const translate = `translate(${translateX}%, 0)`;
 
     return {
-      WebkitTransform: translate3d,
-      MozTransform: translate3d,
-      msTransform: translate3d,
-      OTransform: translate3d,
-      transform: translate3d,
+      WebkitTransform: translate,
+      MozTransform: translate,
+      msTransform: translate,
+      OTransform: translate,
+      transform: translate,
       zIndex: zIndex
     };
   }
 
   _getThumbnailStyle() {
-    let translate3d;
+    let translate;
 
     if (this._isThumbnailHorizontal()) {
-      translate3d = `translate3d(0, ${this.state.thumbsTranslate}px, 0)`;
+      translate = `translate(0, ${this.state.thumbsTranslate}px)`;
     } else {
-      translate3d = `translate3d(${this.state.thumbsTranslate}px, 0, 0)`;
+      translate = `translate(${this.state.thumbsTranslate}px, 0)`;
     }
     return {
-      WebkitTransform: translate3d,
-      MozTransform: translate3d,
-      msTransform: translate3d,
-      OTransform: translate3d,
-      transform: translate3d
+      WebkitTransform: translate,
+      MozTransform: translate,
+      msTransform: translate,
+      OTransform: translate,
+      transform: translate
     };
   }
 
@@ -845,10 +867,10 @@ export default class ImageGallery extends React.Component {
     if (this._thumbnails) {
 
       if (this._isThumbnailHorizontal()) {
-        return (this._thumbnails.scrollHeight > thumbnailsWrapperHeight);
+        return (thumbnailsWrapperHeight && this._thumbnails.scrollHeight > thumbnailsWrapperHeight);
       }
 
-      return (this._thumbnails.scrollWidth > thumbnailsWrapperWidth);
+      return (thumbnailsWrapperWidth && this._thumbnails.scrollWidth > thumbnailsWrapperWidth);
     }
 
     return false;
@@ -1091,20 +1113,48 @@ export default class ImageGallery extends React.Component {
                       )}
                     </span>
                 }
-                <div
-                  className='image-gallery-thumbnails'
-                  ref={i => this._thumbnailsWrapper = i}
-                >
-                  <div
-                    ref={t => this._thumbnails = t}
-                    className='image-gallery-thumbnails-container'
-                    style={thumbnailStyle}
-                    role='navigation'
-                    aria-label='Thumbnail Navigation'
-                  >
-                    {thumbnails}
-                  </div>
-                </div>
+                {
+                  !this.props.disableSwipe && this._showThumbnailsNav() ?
+                    <Swipeable
+                      className='image-gallery-thumbnails-swipe'
+                      delta={1}
+                      onSwiped={this._handleOnSwipedThumbnailsTo.bind(this)}
+                      onSwipedLeft={this._handleOnSwipedThumbnailsTo.bind(this, 1)}
+                      onSwipedRight={this._handleOnSwipedThumbnailsTo.bind(this, -1)}
+                      onSwipedDown={this._handleOnSwipedThumbnailsTo.bind(this, -1)}
+                      onSwipedUp={this._handleOnSwipedThumbnailsTo.bind(this, 1)}
+                      >
+                      <div
+                        className='image-gallery-thumbnails'
+                        ref={i => this._thumbnailsWrapper = i}
+                        >
+                        <div
+                          ref={t => this._thumbnails = t}
+                          className='image-gallery-thumbnails-container'
+                          style={thumbnailStyle}
+                          role='navigation'
+                          aria-label='Thumbnail Navigation'
+                          >
+                          {thumbnails}
+                        </div>
+                      </div>
+                    </Swipeable>
+                    :
+                    <div
+                      className='image-gallery-thumbnails'
+                      ref={i => this._thumbnailsWrapper = i}
+                      >
+                      <div
+                        ref={t => this._thumbnails = t}
+                        className='image-gallery-thumbnails-container'
+                        style={thumbnailStyle}
+                        role='navigation'
+                        aria-label='Thumbnail Navigation'
+                        >
+                        {thumbnails}
+                      </div>
+                    </div>
+                }
               </div>
           }
           {
